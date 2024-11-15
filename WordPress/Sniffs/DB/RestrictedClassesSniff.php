@@ -19,12 +19,14 @@ use WordPressCS\WordPress\AbstractClassRestrictionsSniff;
  *  helps keep your code forward-compatible and, in cases where results are cached in memory,
  *  it can be many times faster."
  *
- * @link https://developer.wordpress.org/coding-standards/wordpress-coding-standards/php/#database-queries
+ * @link    https://make.wordpress.org/core/handbook/best-practices/coding-standards/php/#database-queries
  *
- * @since 0.10.0
- * @since 0.13.0 Class name changed: this class is now namespaced.
+ * @package WPCS\WordPressCodingStandards
+ *
+ * @since   0.10.0
+ * @since   0.13.0 Class name changed: this class is now namespaced.
  */
-final class RestrictedClassesSniff extends AbstractClassRestrictionsSniff {
+class RestrictedClassesSniff extends AbstractClassRestrictionsSniff {
 
 	/**
 	 * Groups of classes to restrict.
@@ -54,4 +56,5 @@ final class RestrictedClassesSniff extends AbstractClassRestrictionsSniff {
 
 		);
 	}
+
 }

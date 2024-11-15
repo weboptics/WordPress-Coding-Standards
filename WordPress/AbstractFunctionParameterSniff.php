@@ -9,13 +9,14 @@
 
 namespace WordPressCS\WordPress;
 
-use PHPCSUtils\Utils\PassedParameters;
 use WordPressCS\WordPress\AbstractFunctionRestrictionsSniff;
 
 /**
  * Advises about parameters used in function calls.
  *
- * @since 0.11.0
+ * @package WPCS\WordPressCodingStandards
+ *
+ * @since   0.11.0
  */
 abstract class AbstractFunctionParameterSniff extends AbstractFunctionRestrictionsSniff {
 
@@ -60,15 +61,14 @@ abstract class AbstractFunctionParameterSniff extends AbstractFunctionRestrictio
 	 *
 	 * @param int    $stackPtr        The position of the current token in the stack.
 	 * @param string $group_name      The name of the group which was matched.
-	 * @param string $matched_content The token content (function name) which was matched
-	 *                                in lowercase.
+	 * @param string $matched_content The token content (function name) which was matched.
 	 *
 	 * @return int|void Integer stack pointer to skip forward or void to continue
 	 *                  normal file processing.
 	 */
 	public function process_matched_token( $stackPtr, $group_name, $matched_content ) {
 
-		$parameters = PassedParameters::getParameters( $this->phpcsFile, $stackPtr );
+		$parameters = $this->get_function_call_parameters( $stackPtr );
 
 		if ( empty( $parameters ) ) {
 			return $this->process_no_parameters( $stackPtr, $group_name, $matched_content );
@@ -84,8 +84,7 @@ abstract class AbstractFunctionParameterSniff extends AbstractFunctionRestrictio
 	 *
 	 * @param int    $stackPtr        The position of the current token in the stack.
 	 * @param string $group_name      The name of the group which was matched.
-	 * @param string $matched_content The token content (function name) which was matched
-	 *                                in lowercase.
+	 * @param string $matched_content The token content (function name) which was matched.
 	 * @param array  $parameters      Array with information about the parameters.
 	 *
 	 * @return int|void Integer stack pointer to skip forward or void to continue
@@ -101,11 +100,13 @@ abstract class AbstractFunctionParameterSniff extends AbstractFunctionRestrictio
 	 *
 	 * @param int    $stackPtr        The position of the current token in the stack.
 	 * @param string $group_name      The name of the group which was matched.
-	 * @param string $matched_content The token content (function name) which was matched
-	 *                                in lowercase.
+	 * @param string $matched_content The token content (function name) which was matched.
 	 *
 	 * @return int|void Integer stack pointer to skip forward or void to continue
 	 *                  normal file processing.
 	 */
-	public function process_no_parameters( $stackPtr, $group_name, $matched_content ) {}
+	public function process_no_parameters( $stackPtr, $group_name, $matched_content ) {
+		return;
+	}
+
 }

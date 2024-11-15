@@ -9,9 +9,6 @@
 
 namespace WordPressCS\WordPress\Sniffs\Arrays;
 
-use PHPCSUtils\Tokens\Collections;
-use PHPCSUtils\Utils\Arrays;
-use PHPCSUtils\Utils\PassedParameters;
 use WordPressCS\WordPress\Sniff;
 
 /**
@@ -22,14 +19,16 @@ use WordPressCS\WordPress\Sniff;
  * - Allows for new line(s) before a double arrow (configurable).
  * - Allows for handling multi-line array items differently if so desired (configurable).
  *
- * @link https://developer.wordpress.org/coding-standards/wordpress-coding-standards/php/#indentation
+ * @link    https://make.wordpress.org/core/handbook/best-practices/coding-standards/php/#indentation
  *
- * @since 0.14.0
+ * @package WPCS\WordPressCodingStandards
+ *
+ * @since   0.14.0
  *
  * {@internal This sniff should eventually be pulled upstream as part of a solution
  * for https://github.com/squizlabs/PHP_CodeSniffer/issues/582 }}
  */
-final class MultipleStatementAlignmentSniff extends Sniff {
+class MultipleStatementAlignmentSniff extends Sniff {
 
 	/**
 	 * Whether or not to ignore an array item for the purpose of alignment
@@ -112,7 +111,7 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 	 *               * Setting this to `=0` is useless as in that case there are
 	 *                 no multi-line items in the array anyway.
 	 *
-	 * This setting will respect the `ignoreNewlines` and `maxColumn` settings.
+	 * This setting will respect the `ignoreNewlines` and `maxColumnn` settings.
 	 *
 	 * @since 0.14.0
 	 *
@@ -148,7 +147,10 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 	 * @return array
 	 */
 	public function register() {
-		return Collections::arrayOpenTokensBC();
+		return array(
+			\T_ARRAY,
+			\T_OPEN_SHORT_ARRAY,
+		);
 	}
 
 	/**
@@ -163,8 +165,8 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 	 */
 	public function process_token( $stackPtr ) {
 
-		if ( isset( Collections::shortArrayListOpenTokensBC()[ $this->tokens[ $stackPtr ]['code'] ] )
-			&& Arrays::isShortArray( $this->phpcsFile, $stackPtr ) === false
+		if ( \T_OPEN_SHORT_ARRAY === $this->tokens[ $stackPtr ]['code']
+			&& $this->is_short_list( $stackPtr )
 		) {
 			// Short list, not short array.
 			return;
@@ -173,7 +175,7 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 		/*
 		 * Determine the array opener & closer.
 		 */
-		$array_open_close = Arrays::getOpenClose( $this->phpcsFile, $stackPtr );
+		$array_open_close = $this->find_array_open_close( $stackPtr );
 		if ( false === $array_open_close ) {
 			// Array open/close could not be determined.
 			return;
@@ -182,7 +184,7 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 		$opener = $array_open_close['opener'];
 		$closer = $array_open_close['closer'];
 
-		$array_items = PassedParameters::getParameters( $this->phpcsFile, $stackPtr );
+		$array_items = $this->get_function_call_parameters( $stackPtr );
 		if ( empty( $array_items ) ) {
 			return;
 		}
@@ -291,9 +293,34 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 		$total_items       = \count( $items );
 
 		foreach ( $items as $key => $item ) {
-			// Find the double arrow if there is one.
-			$double_arrow = Arrays::getDoubleArrowPtr( $this->phpcsFile, $item['start'], $item['end'] );
+			if ( strpos( $item['raw'], '=>' ) === false ) {
+				// Ignore items without assignment operators.
+				unset( $items[ $key ] );
+				continue;
+			}
+
+			// Find the position of the first double arrow.
+			$double_arrow = $this->phpcsFile->findNext(
+				\T_DOUBLE_ARROW,
+				$item['start'],
+				( $item['end'] + 1 )
+			);
+
 			if ( false === $double_arrow ) {
+				// Shouldn't happen, just in case.
+				unset( $items[ $key ] );
+				continue;
+			}
+
+			// Make sure the arrow is for this item and not for a nested array value assignment.
+			$has_array_opener = $this->phpcsFile->findNext(
+				$this->register(),
+				$item['start'],
+				$double_arrow
+			);
+
+			if ( false !== $has_array_opener ) {
+				// Double arrow is for a nested array.
 				unset( $items[ $key ] );
 				continue;
 			}
@@ -305,6 +332,12 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 				$item['start'],
 				true
 			);
+
+			if ( false === $last_index_token ) {
+				// Shouldn't happen, but just in case.
+				unset( $items[ $key ] );
+				continue;
+			}
 
 			if ( true === $this->ignoreNewlines
 				&& $this->tokens[ $last_index_token ]['line'] !== $this->tokens[ $double_arrow ]['line']
@@ -323,7 +356,7 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 				$items[ $key ]['single_line'] = true;
 			} else {
 				$items[ $key ]['single_line'] = false;
-				++$multi_line_count;
+				$multi_line_count++;
 			}
 
 			if ( ( $index_end_position + 2 ) <= $this->maxColumn ) {
@@ -333,10 +366,10 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 			if ( ! isset( $double_arrow_cols[ $this->tokens[ $double_arrow ]['column'] ] ) ) {
 				$double_arrow_cols[ $this->tokens[ $double_arrow ]['column'] ] = 1;
 			} else {
-				++$double_arrow_cols[ $this->tokens[ $double_arrow ]['column'] ];
+				$double_arrow_cols[ $this->tokens[ $double_arrow ]['column'] ]++;
 			}
 		}
-		unset( $key, $item, $double_arrow, $last_index_token );
+		unset( $key, $item, $double_arrow, $has_array_opener, $last_index_token );
 
 		if ( empty( $items ) || empty( $index_end_cols ) ) {
 			// No actionable array items found.
@@ -378,7 +411,7 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 				if ( ! isset( $double_arrow_cols[ $this->tokens[ $item['operatorPtr'] ]['column'] ] ) ) {
 					$double_arrow_cols[ $this->tokens[ $item['operatorPtr'] ]['column'] ] = 1;
 				} else {
-					++$double_arrow_cols[ $this->tokens[ $item['operatorPtr'] ]['column'] ];
+					$double_arrow_cols[ $this->tokens[ $item['operatorPtr'] ]['column'] ]++;
 				}
 			}
 		}
@@ -430,10 +463,12 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 
 			if ( \T_WHITESPACE !== $this->tokens[ ( $item['operatorPtr'] - 1 ) ]['code'] ) {
 				$before = 0;
-			} elseif ( $this->tokens[ $item['last_index_token'] ]['line'] !== $this->tokens[ $item['operatorPtr'] ]['line'] ) {
-				$before = 'newline';
 			} else {
-				$before = $this->tokens[ ( $item['operatorPtr'] - 1 ) ]['length'];
+				if ( $this->tokens[ $item['last_index_token'] ]['line'] !== $this->tokens[ $item['operatorPtr'] ]['line'] ) {
+					$before = 'newline';
+				} else {
+					$before = $this->tokens[ ( $item['operatorPtr'] - 1 ) ]['length'];
+				}
 			}
 
 			/*
@@ -543,8 +578,6 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 	 * This message may be thrown more than once if the property is being changed inline in a file.
 	 *
 	 * @since 0.14.0
-	 *
-	 * @return void
 	 */
 	protected function validate_align_multiline_items() {
 		$alignMultilineItems = $this->alignMultilineItems;
@@ -580,4 +613,5 @@ final class MultipleStatementAlignmentSniff extends Sniff {
 		// Reset to the default if an invalid value was received.
 		$this->alignMultilineItems = 'always';
 	}
+
 }

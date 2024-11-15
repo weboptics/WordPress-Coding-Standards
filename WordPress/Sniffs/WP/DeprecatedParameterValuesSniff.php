@@ -9,23 +9,19 @@
 
 namespace WordPressCS\WordPress\Sniffs\WP;
 
-use PHP_CodeSniffer\Util\Tokens;
-use PHPCSUtils\Utils\MessageHelper;
-use PHPCSUtils\Utils\PassedParameters;
-use PHPCSUtils\Utils\TextStrings;
 use WordPressCS\WordPress\AbstractFunctionParameterSniff;
-use WordPressCS\WordPress\Helpers\MinimumWPVersionTrait;
+use PHP_CodeSniffer\Util\Tokens;
 
 /**
  * Check for usage of deprecated parameter values in WP functions and provide alternative based on the parameter passed.
  *
- * @since 1.0.0
+ * @package WPCS\WordPressCodingStandards
  *
- * @uses \WordPressCS\WordPress\Helpers\MinimumWPVersionTrait::$minimum_wp_version
+ * @since   1.0.0
+ *
+ * @uses    \WordPressCS\WordPress\Sniff::$minimum_supported_version
  */
-final class DeprecatedParameterValuesSniff extends AbstractFunctionParameterSniff {
-
-	use MinimumWPVersionTrait;
+class DeprecatedParameterValuesSniff extends AbstractFunctionParameterSniff {
 
 	/**
 	 * The group name for this group of functions.
@@ -45,165 +41,97 @@ final class DeprecatedParameterValuesSniff extends AbstractFunctionParameterSnif
 	 * Last updated for WordPress 4.9.6.
 	 *
 	 * @since 1.0.0
-	 * @since 3.0.0 The format of the value has changed to support function calls
-	 *              using named parameters.
 	 *
 	 * @var array Multidimensional array with parameter details.
 	 *     $target_functions = array(
 	 *         (string) Function name. => array(
 	 *             (int) Target parameter position, 1-based. => array(
-	 *                 (string) 'name'   => (string|array) Parameter name(s),
-	 *                 (string) 'values' => array(
-	 *                     (string) Parameter value. => array(
-	 *                         'alt'     => (string) Suggested alternative.
-	 *                         'version' => (int) The WordPress version when deprecated.
-	 *                     )
+	 *                 (string) Parameter value. => array(
+	 *                     'alt'     => (string) Suggested alternative.
+	 *                     'version' => (int) The WordPress version when deprecated.
 	 *                 )
 	 *             )
 	 *         )
 	 *     );
 	 */
 	protected $target_functions = array(
-		'add_option' => array(
-			1 => array(
-				'name'   => 'option',
-				'values' => array(
-					'blacklist_keys' => array(
-						'alt'     => 'disallowed_keys',
-						'version' => '5.5.0',
-					),
-					'comment_whitelist' => array(
-						'alt'     => 'comment_previously_approved',
-						'version' => '5.5.0',
-					),
-				),
-			),
-		),
 		'add_settings_field' => array(
 			4 => array(
-				'name'   => 'page',
-				'values' => array(
-					'misc' => array(
-						'alt'     => 'another settings group',
-						'version' => '3.0.0',
-					),
-					'privacy' => array(
-						'alt'     => 'another settings group',
-						'version' => '3.5.0',
-					),
+				'misc' => array(
+					'alt'     => 'another settings group',
+					'version' => '3.0.0',
+				),
+				'privacy' => array(
+					'alt'     => 'another settings group',
+					'version' => '3.5.0',
 				),
 			),
 		),
 		'add_settings_section' => array(
 			4 => array(
-				'name'   => 'page',
-				'values' => array(
-					'misc' => array(
-						'alt'     => 'another settings group',
-						'version' => '3.0.0',
-					),
-					'privacy' => array(
-						'alt'     => 'another settings group',
-						'version' => '3.5.0',
-					),
+				'misc' => array(
+					'alt'     => 'another settings group',
+					'version' => '3.0.0',
+				),
+				'privacy' => array(
+					'alt'     => 'another settings group',
+					'version' => '3.5.0',
 				),
 			),
 		),
 		'bloginfo' => array(
 			1 => array(
-				'name'   => 'show',
-				'values' => array(
-					'home' => array(
-						'alt'     => 'the "url" argument',
-						'version' => '2.2.0',
-					),
-					'siteurl' => array(
-						'alt'     => 'the "url" argument',
-						'version' => '2.2.0',
-					),
-					'text_direction' => array(
-						'alt'     => 'is_rtl()',
-						'version' => '2.2.0',
-					),
+				'home' => array(
+					'alt'     => 'the "url" argument',
+					'version' => '2.2.0',
+				),
+				'siteurl' => array(
+					'alt'     => 'the "url" argument',
+					'version' => '2.2.0',
+				),
+				'text_direction' => array(
+					'alt'     => 'is_rtl()',
+					'version' => '2.2.0',
 				),
 			),
 		),
 		'get_bloginfo' => array(
 			1 => array(
-				'name'   => 'show',
-				'values' => array(
-					'home' => array(
-						'alt'     => 'the "url" argument',
-						'version' => '2.2.0',
-					),
-					'siteurl' => array(
-						'alt'     => 'the "url" argument',
-						'version' => '2.2.0',
-					),
-					'text_direction' => array(
-						'alt'     => 'is_rtl()',
-						'version' => '2.2.0',
-					),
+				'home' => array(
+					'alt'     => 'the "url" argument',
+					'version' => '2.2.0',
 				),
-			),
-		),
-		'get_option' => array(
-			1 => array(
-				'name'   => 'option',
-				'values' => array(
-					'blacklist_keys' => array(
-						'alt'     => 'disallowed_keys',
-						'version' => '5.5.0',
-					),
-					'comment_whitelist' => array(
-						'alt'     => 'comment_previously_approved',
-						'version' => '5.5.0',
-					),
+				'siteurl' => array(
+					'alt'     => 'the "url" argument',
+					'version' => '2.2.0',
+				),
+				'text_direction' => array(
+					'alt'     => 'is_rtl()',
+					'version' => '2.2.0',
 				),
 			),
 		),
 		'register_setting' => array(
 			1 => array(
-				'name'   => 'option_group',
-				'values' => array(
-					'misc' => array(
-						'alt'     => 'another settings group',
-						'version' => '3.0.0',
-					),
-					'privacy' => array(
-						'alt'     => 'another settings group',
-						'version' => '3.5.0',
-					),
+				'misc' => array(
+					'alt'     => 'another settings group',
+					'version' => '3.0.0',
+				),
+				'privacy' => array(
+					'alt'     => 'another settings group',
+					'version' => '3.5.0',
 				),
 			),
 		),
 		'unregister_setting' => array(
 			1 => array(
-				'name'   => 'option_group',
-				'values' => array(
-					'misc' => array(
-						'alt'     => 'another settings group',
-						'version' => '3.0.0',
-					),
-					'privacy' => array(
-						'alt'     => 'another settings group',
-						'version' => '3.5.0',
-					),
+				'misc' => array(
+					'alt'     => 'another settings group',
+					'version' => '3.0.0',
 				),
-			),
-		),
-		'update_option' => array(
-			1 => array(
-				'name'   => 'option',
-				'values' => array(
-					'blacklist_keys' => array(
-						'alt'     => 'disallowed_keys',
-						'version' => '5.5.0',
-					),
-					'comment_whitelist' => array(
-						'alt'     => 'comment_previously_approved',
-						'version' => '5.5.0',
-					),
+				'privacy' => array(
+					'alt'     => 'another settings group',
+					'version' => '3.5.0',
 				),
 			),
 		),
@@ -216,24 +144,22 @@ final class DeprecatedParameterValuesSniff extends AbstractFunctionParameterSnif
 	 *
 	 * @param int    $stackPtr        The position of the current token in the stack.
 	 * @param string $group_name      The name of the group which was matched.
-	 * @param string $matched_content The token content (function name) which was matched
-	 *                                in lowercase.
+	 * @param string $matched_content The token content (function name) which was matched.
 	 * @param array  $parameters      Array with information about the parameters.
 	 *
 	 * @return void
 	 */
 	public function process_parameters( $stackPtr, $group_name, $matched_content, $parameters ) {
-		$this->set_minimum_wp_version();
-
+		$this->get_wp_version_from_cl();
+		$param_count = \count( $parameters );
 		foreach ( $this->target_functions[ $matched_content ] as $position => $parameter_args ) {
-			$found_param = PassedParameters::getParameterFromStack( $parameters, $position, $parameter_args['name'] );
 
-			// Skip if the parameter was not found.
-			if ( false === $found_param ) {
-				continue;
+			// Stop if the position is higher then the total number of parameters.
+			if ( $position > $param_count ) {
+				break;
 			}
 
-			$this->process_parameter( $matched_content, $found_param, $parameter_args['values'] );
+			$this->process_parameter( $matched_content, $parameters[ $position ], $parameter_args );
 		}
 	}
 
@@ -242,9 +168,8 @@ final class DeprecatedParameterValuesSniff extends AbstractFunctionParameterSnif
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $matched_content The token content (function name) which was matched
-	 *                                in lowercase.
-	 * @param array  $parameter       Array with start and end token position of the parameter.
+	 * @param string $matched_content The token content (function name) which was matched.
+	 * @param array  $parameter       Array with start and end token positon of the parameter.
 	 * @param array  $parameter_args  Array with alternative and WordPress deprecation version of the parameter.
 	 *
 	 * @return void
@@ -262,7 +187,7 @@ final class DeprecatedParameterValuesSniff extends AbstractFunctionParameterSnif
 			return;
 		}
 
-		$matched_parameter = TextStrings::stripQuotes( $this->tokens[ $parameter_position ]['content'] );
+		$matched_parameter = $this->strip_quotes( $this->tokens[ $parameter_position ]['content'] );
 		if ( ! isset( $parameter_args[ $matched_parameter ] ) ) {
 			return;
 		}
@@ -278,14 +203,14 @@ final class DeprecatedParameterValuesSniff extends AbstractFunctionParameterSnif
 			$data[]   = $parameter_args[ $matched_parameter ]['alt'];
 		}
 
-		$is_error = $this->wp_version_compare( $parameter_args[ $matched_parameter ]['version'], $this->minimum_wp_version, '<' );
-		MessageHelper::addMessage(
-			$this->phpcsFile,
+		$is_error = version_compare( $parameter_args[ $matched_parameter ]['version'], $this->minimum_supported_version, '<' );
+		$this->addMessage(
 			$message,
 			$parameter_position,
 			$is_error,
-			'Found',
+			$this->string_to_errorcode( 'Found' ),
 			$data
 		);
 	}
+
 }

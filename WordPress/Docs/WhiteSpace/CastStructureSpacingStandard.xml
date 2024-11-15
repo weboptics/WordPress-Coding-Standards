@@ -1,8 +1,4 @@
-<?xml version="1.0"?>
-<documentation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="https://phpcsstandards.github.io/PHPCSDevTools/phpcsdocs.xsd"
-    title="Cast Structure Spacing"
-    >
+<documentation title="Cast Structure Spacing">
     <standard>
     <![CDATA[
     A type cast should be preceded by whitespace.
@@ -10,7 +6,7 @@
     ]]>
     </standard>
     <code_comparison>
-        <code title="Valid: Space before typecast.">
+        <code title="Valid: space before typecast.">
         <![CDATA[
 $a =<em> </em>(int) '420';
 
@@ -18,7 +14,7 @@ $a =<em> </em>(int) '420';
 $a = function_call( <em>...(array)</em> $mixed );
         ]]>
         </code>
-        <code title="Invalid: No space before typecast.">
+        <code title="Invalid: no space before typecast.">
         <![CDATA[
 $a <em>=(</em>int) '420';
         ]]>

@@ -9,30 +9,30 @@
 
 namespace WordPressCS\WordPress\Sniffs\PHP;
 
-use PHP_CodeSniffer\Util\Tokens;
-use PHPCSUtils\Tokens\Collections;
 use WordPressCS\WordPress\Sniff;
+use PHP_CodeSniffer\Util\Tokens;
 
 /**
  * Enforces Yoda conditional statements.
  *
- * @link https://developer.wordpress.org/coding-standards/wordpress-coding-standards/php/#yoda-conditions
+ * @link    https://make.wordpress.org/core/handbook/best-practices/coding-standards/php/#yoda-conditions
  *
- * @since 0.3.0
- * @since 0.12.0 This class now extends the WordPressCS native `Sniff` class.
- * @since 0.13.0 Class name changed: this class is now namespaced.
+ * @package WPCS\WordPressCodingStandards
+ *
+ * @since   0.3.0
+ * @since   0.12.0 This class now extends the WordPressCS native `Sniff` class.
+ * @since   0.13.0 Class name changed: this class is now namespaced.
  */
-final class YodaConditionsSniff extends Sniff {
+class YodaConditionsSniff extends Sniff {
 
 	/**
 	 * The tokens that indicate the start of a condition.
 	 *
 	 * @since 0.12.0
-	 * @since 3.0.0  This property is now `private`.
 	 *
 	 * @var array
 	 */
-	private $condition_start_tokens;
+	protected $condition_start_tokens;
 
 	/**
 	 * Returns an array of tokens this test wants to listen for.
@@ -81,7 +81,7 @@ final class YodaConditionsSniff extends Sniff {
 				continue;
 			}
 
-			// If this is a variable or array assignment, we've seen all we need to see.
+			// If this is a variable or array, we've seen all we need to see.
 			if ( \T_VARIABLE === $this->tokens[ $i ]['code']
 				|| \T_CLOSE_SQUARE_BRACKET === $this->tokens[ $i ]['code']
 			) {
@@ -106,7 +106,7 @@ final class YodaConditionsSniff extends Sniff {
 			$next_non_empty = $this->phpcsFile->findNext( Tokens::$emptyTokens, ( $next_non_empty + 1 ), null, true );
 		}
 
-		if ( isset( Collections::ooHierarchyKeywords()[ $this->tokens[ $next_non_empty ]['code'] ] ) === true ) {
+		if ( \in_array( $this->tokens[ $next_non_empty ]['code'], array( \T_SELF, \T_PARENT, \T_STATIC ), true ) ) {
 			$next_non_empty = $this->phpcsFile->findNext(
 				( Tokens::$emptyTokens + array( \T_DOUBLE_COLON => \T_DOUBLE_COLON ) ),
 				( $next_non_empty + 1 ),
@@ -121,4 +121,5 @@ final class YodaConditionsSniff extends Sniff {
 
 		$this->phpcsFile->addError( 'Use Yoda Condition checks, you must.', $stackPtr, 'NotYoda' );
 	}
+
 }

@@ -19,13 +19,15 @@ use WordPressCS\WordPress\Sniff;
  *
  * Additionally, the use of the (unset) and (binary) casts is discouraged.
  *
- * @link https://developer.wordpress.org/coding-standards/wordpress-coding-standards/php/#space-usage
+ * @link    https://make.wordpress.org/core/handbook/best-practices/....
  *
- * @since 1.2.0
- * @since 2.0.0 No longer checks that type casts are lowercase or short form.
- *              Relevant PHPCS native sniffs have been included in the rulesets instead.
+ * @package WPCS\WordPressCodingStandards
+ *
+ * @since   1.2.0
+ * @since   2.0.0 No longer checks that type casts are lowercase or short form.
+ *                Relevant PHPCS native sniffs have been included in the rulesets instead.
  */
-final class TypeCastsSniff extends Sniff {
+class TypeCastsSniff extends Sniff {
 
 	/**
 	 * Returns an array of tokens this test wants to listen for.
@@ -36,6 +38,7 @@ final class TypeCastsSniff extends Sniff {
 		return array(
 			\T_DOUBLE_CAST,
 			\T_UNSET_CAST,
+			\T_STRING_CAST,
 			\T_BINARY_CAST,
 		);
 	}
@@ -70,14 +73,19 @@ final class TypeCastsSniff extends Sniff {
 				break;
 
 			case \T_UNSET_CAST:
-				$this->phpcsFile->addError(
-					'Using the "(unset)" cast is forbidden as the type cast is removed in PHP 8.0. Use the "unset()" language construct instead.',
+				$this->phpcsFile->addWarning(
+					'Using the "(unset)" cast is strongly discouraged. Use the "unset()" language construct or assign "null" as the value to the variable instead.',
 					$stackPtr,
 					'UnsetFound'
 				);
 				break;
 
+			case \T_STRING_CAST:
 			case \T_BINARY_CAST:
+				if ( \T_STRING_CAST === $token_code && '(binary)' !== $typecast_lc ) {
+					break;
+				}
+
 				$this->phpcsFile->addWarning(
 					'Using binary casting is strongly discouraged. Found: "%s"',
 					$stackPtr,
@@ -87,4 +95,5 @@ final class TypeCastsSniff extends Sniff {
 				break;
 		}
 	}
+
 }

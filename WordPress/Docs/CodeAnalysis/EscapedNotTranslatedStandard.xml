@@ -1,8 +1,4 @@
-<?xml version="1.0"?>
-<documentation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="https://phpcsstandards.github.io/PHPCSDevTools/phpcsdocs.xsd"
-    title="Escaped Not Translated"
-    >
+<documentation title="Escaped Not Translated Text">
     <standard>
     <![CDATA[
     Text intended for translation needs to be wrapped in a localization function call.

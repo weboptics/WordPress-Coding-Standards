@@ -9,9 +9,7 @@
 
 namespace WordPressCS\WordPress\Sniffs\WP;
 
-use PHPCSUtils\Utils\MessageHelper;
 use WordPressCS\WordPress\AbstractClassRestrictionsSniff;
-use WordPressCS\WordPress\Helpers\MinimumWPVersionTrait;
 
 /**
  * Restricts the use of deprecated WordPress classes and suggests alternatives.
@@ -22,17 +20,17 @@ use WordPressCS\WordPress\Helpers\MinimumWPVersionTrait;
  * By default, it is set to presume that a project will support the current
  * WP version and up to three releases before.
  *
- * @since 0.12.0
- * @since 0.13.0 Class name changed: this class is now namespaced.
- * @since 0.14.0 Now has the ability to handle minimum supported WP version
- *               being provided via the command-line or as as <config> value
- *               in a custom ruleset.
+ * @package WPCS\WordPressCodingStandards
  *
- * @uses \WordPressCS\WordPress\Helpers\MinimumWPVersionTrait::$minimum_wp_version
+ * @since   0.12.0
+ * @since   0.13.0 Class name changed: this class is now namespaced.
+ * @since   0.14.0 Now has the ability to handle minimum supported WP version
+ *                 being provided via the command-line or as as <config> value
+ *                 in a custom ruleset.
+ *
+ * @uses    \WordPressCS\WordPress\Sniff::$minimum_supported_version
  */
-final class DeprecatedClassesSniff extends AbstractClassRestrictionsSniff {
-
-	use MinimumWPVersionTrait;
+class DeprecatedClassesSniff extends AbstractClassRestrictionsSniff {
 
 	/**
 	 * List of deprecated classes with alternative when available.
@@ -40,8 +38,6 @@ final class DeprecatedClassesSniff extends AbstractClassRestrictionsSniff {
 	 * To be updated after every major release.
 	 *
 	 * Version numbers should be fully qualified.
-	 *
-	 * {@internal To be updated after every major release. Last updated for WordPress 6.5-RC3.}
 	 *
 	 * @var array
 	 */
@@ -53,14 +49,8 @@ final class DeprecatedClassesSniff extends AbstractClassRestrictionsSniff {
 			'version' => '3.1.0',
 		),
 
-		// WP 3.7.0.
-		'WP_HTTP_Fsockopen' => array(
-			'alt'     => 'WP_HTTP::request()',
-			'version' => '3.7.0',
-		),
-
 		// WP 4.9.0.
-		'WP_Customize_New_Menu_Section' => array(
+		'Customize_New_Menu_Section' => array(
 			'version' => '4.9.0',
 		),
 		'WP_Customize_New_Menu_Control' => array(
@@ -68,33 +58,12 @@ final class DeprecatedClassesSniff extends AbstractClassRestrictionsSniff {
 		),
 
 		// WP 5.3.0.
-		'WP_Privacy_Data_Export_Requests_Table' => array(
-			'alt'     => 'WP_Privacy_Data_Export_Requests_List_Table',
-			'version' => '5.3.0',
-		),
-		'WP_Privacy_Data_Removal_Requests_Table' => array(
-			'alt'     => 'WP_Privacy_Data_Removal_Requests_List_Table',
-			'version' => '5.3.0',
-		),
 		'Services_JSON' => array(
 			'alt'     => 'The PHP native JSON extension',
 			'version' => '5.3.0',
 		),
-		'Services_JSON_Error' => array(
-			'alt'     => 'The PHP native JSON extension',
-			'version' => '5.3.0',
-		),
-
-		// WP 6.4.0.
-		'WP_Http_Curl' => array(
-			'alt'     => 'WP_Http',
-			'version' => '6.4.0',
-		),
-		'WP_Http_Streams' => array(
-			'alt'     => 'WP_Http',
-			'version' => '6.4.0',
-		),
 	);
+
 
 	/**
 	 * Groups of classes to restrict.
@@ -103,7 +72,7 @@ final class DeprecatedClassesSniff extends AbstractClassRestrictionsSniff {
 	 */
 	public function getGroups() {
 		// Make sure all array keys are lowercase.
-		$this->deprecated_classes = array_change_key_case( $this->deprecated_classes, \CASE_LOWER );
+		$this->deprecated_classes = array_change_key_case( $this->deprecated_classes, CASE_LOWER );
 
 		return array(
 			'deprecated_classes' => array(
@@ -118,14 +87,13 @@ final class DeprecatedClassesSniff extends AbstractClassRestrictionsSniff {
 	 * @param int    $stackPtr        The position of the current token in the stack.
 	 * @param string $group_name      The name of the group which was matched. Will
 	 *                                always be 'deprecated_classes'.
-	 * @param string $matched_content The token content (class name) which was matched
-	 *                                in its original case.
+	 * @param string $matched_content The token content (class name) which was matched.
 	 *
 	 * @return void
 	 */
 	public function process_matched_token( $stackPtr, $group_name, $matched_content ) {
 
-		$this->set_minimum_wp_version();
+		$this->get_wp_version_from_cl();
 
 		$class_name = ltrim( strtolower( $matched_content ), '\\' );
 
@@ -140,13 +108,13 @@ final class DeprecatedClassesSniff extends AbstractClassRestrictionsSniff {
 			$data[]   = $this->deprecated_classes[ $class_name ]['alt'];
 		}
 
-		MessageHelper::addMessage(
-			$this->phpcsFile,
+		$this->addMessage(
 			$message,
 			$stackPtr,
-			( $this->wp_version_compare( $this->deprecated_classes[ $class_name ]['version'], $this->minimum_wp_version, '<' ) ),
-			MessageHelper::stringToErrorcode( $class_name . 'Found' ),
+			( version_compare( $this->deprecated_classes[ $class_name ]['version'], $this->minimum_supported_version, '<' ) ),
+			$this->string_to_errorcode( $class_name . 'Found' ),
 			$data
 		);
 	}
+
 }

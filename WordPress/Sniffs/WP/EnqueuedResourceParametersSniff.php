@@ -9,10 +9,8 @@
 
 namespace WordPressCS\WordPress\Sniffs\WP;
 
-use PHP_CodeSniffer\Util\Tokens;
-use PHPCSUtils\Utils\Numbers;
-use PHPCSUtils\Utils\PassedParameters;
 use WordPressCS\WordPress\AbstractFunctionParameterSniff;
+use PHP_CodeSniffer\Util\Tokens;
 
 /**
  * This checks the enqueued 4th and 5th parameters to make sure the version and in_footer are set.
@@ -25,9 +23,11 @@ use WordPressCS\WordPress\AbstractFunctionParameterSniff;
  * @link https://developer.wordpress.org/reference/functions/wp_register_style/
  * @link https://developer.wordpress.org/reference/functions/wp_enqueue_style/
  *
+ * @package WPCS\WordPressCodingStandards
+ *
  * @since 1.0.0
  */
-final class EnqueuedResourceParametersSniff extends AbstractFunctionParameterSniff {
+class EnqueuedResourceParametersSniff extends AbstractFunctionParameterSniff {
 
 	/**
 	 * The group name for this group of functions.
@@ -43,7 +43,7 @@ final class EnqueuedResourceParametersSniff extends AbstractFunctionParameterSni
 	 *
 	 * @since 1.0.0
 	 *
-	 * @var array<string, true> Key is function name, value irrelevant.
+	 * @var array <string function_name> => <bool true>
 	 */
 	protected $target_functions = array(
 		'wp_register_script' => true,
@@ -57,7 +57,7 @@ final class EnqueuedResourceParametersSniff extends AbstractFunctionParameterSni
 	 *
 	 * This array is enriched with the $emptyTokens array in the register() method.
 	 *
-	 * @var array<int|string, int|string>
+	 * @var array
 	 */
 	private $false_tokens = array(
 		\T_FALSE => \T_FALSE,
@@ -68,7 +68,7 @@ final class EnqueuedResourceParametersSniff extends AbstractFunctionParameterSni
 	 *
 	 * This array is enriched with the several of the PHPCS token arrays in the register() method.
 	 *
-	 * @var array<int|string, int|string>
+	 * @var array
 	 */
 	private $safe_tokens = array(
 		\T_NULL                     => \T_NULL,
@@ -112,16 +112,15 @@ final class EnqueuedResourceParametersSniff extends AbstractFunctionParameterSni
 	 *
 	 * @param int    $stackPtr        The position of the current token in the stack.
 	 * @param string $group_name      The name of the group which was matched.
-	 * @param string $matched_content The token content (function name) which was matched
-	 *                                in lowercase.
+	 * @param string $matched_content The token content (function name) which was matched.
 	 * @param array  $parameters      Array with information about the parameters.
 	 *
 	 * @return void
 	 */
 	public function process_parameters( $stackPtr, $group_name, $matched_content, $parameters ) {
+
 		// Check to see if a source ($src) is specified.
-		$src_param = PassedParameters::getParameterFromStack( $parameters, 2, 'src' );
-		if ( false === $src_param ) {
+		if ( ! isset( $parameters[2] ) ) {
 			return;
 		}
 
@@ -129,37 +128,29 @@ final class EnqueuedResourceParametersSniff extends AbstractFunctionParameterSni
 		 * Version Check: Check to make sure the version is set explicitly.
 		 */
 
-		$version_param = PassedParameters::getParameterFromStack( $parameters, 4, 'ver' );
-
-		$error_ptr = $stackPtr;
-		if ( false !== $version_param ) {
-			$error_ptr = $this->phpcsFile->findNext( Tokens::$emptyTokens, $version_param['start'], ( $version_param['end'] + 1 ), true );
-			if ( false === $error_ptr ) {
-				$error_ptr = $version_param['start'];
-			}
-		}
-
-		if ( false === $version_param || 'null' === $version_param['clean'] ) {
+		if ( ! isset( $parameters[4] ) || 'null' === $parameters[4]['raw'] ) {
 			$type = 'script';
 			if ( strpos( $matched_content, '_style' ) !== false ) {
 				$type = 'style';
 			}
 
-			$this->phpcsFile->addWarning(
-				'Resource version not set in call to %s(). This means new versions of the %s may not always be loaded due to browser caching.',
-				$error_ptr,
+			$this->phpcsFile->addError(
+				'Resource version not set in call to %s(). This means new versions of the %s will not always be loaded due to browser caching.',
+				$stackPtr,
 				'MissingVersion',
 				array( $matched_content, $type )
 			);
+		} else {
 			// The version argument should have a non-false value.
-		} elseif ( $this->is_falsy( $version_param['start'], $version_param['end'] ) ) {
-			$this->phpcsFile->addError(
-				'Version parameter is not explicitly set or has been set to an equivalent of "false" for %s; ' .
-				'This means that the WordPress core version will be used which is not recommended for plugin or theme development.',
-				$error_ptr,
-				'NoExplicitVersion',
-				array( $matched_content )
-			);
+			if ( $this->is_falsy( $parameters[4]['start'], $parameters[4]['end'] ) ) {
+				$this->phpcsFile->addError(
+					'Version parameter is not explicitly set or has been set to an equivalent of "false" for %s; ' .
+					'This means that the WordPress core version will be used which is not recommended for plugin or theme development.',
+					$stackPtr,
+					'NoExplicitVersion',
+					array( $matched_content )
+				);
+			}
 		}
 
 		/*
@@ -175,8 +166,7 @@ final class EnqueuedResourceParametersSniff extends AbstractFunctionParameterSni
 			return;
 		}
 
-		$infooter_param = PassedParameters::getParameterFromStack( $parameters, 5, 'in_footer' );
-		if ( false === $infooter_param ) {
+		if ( ! isset( $parameters[5] ) ) {
 			// If in footer is not set, throw a warning about the default.
 			$this->phpcsFile->addWarning(
 				'In footer ($in_footer) is not set explicitly %s; ' .
@@ -216,14 +206,6 @@ final class EnqueuedResourceParametersSniff extends AbstractFunctionParameterSni
 			}
 
 			if ( isset( Tokens::$emptyTokens[ $this->tokens[ $i ]['code'] ] ) === true ) {
-				continue;
-			}
-
-			// Make sure that PHP 7.4 numeric literals and PHP 8.1 explicit octals don't cause problems.
-			if ( \T_LNUMBER === $this->tokens[ $i ]['code'] || \T_DNUMBER === $this->tokens[ $i ]['code'] ) {
-				$number_info  = Numbers::getCompleteNumber( $this->phpcsFile, $i );
-				$code_string .= $number_info['decimal'];
-				$i            = $number_info['last_token'];
 				continue;
 			}
 
